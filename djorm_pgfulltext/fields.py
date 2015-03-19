@@ -47,6 +47,35 @@ try:
 except ImportError:
     pass
 
+class QueryField(models.Field):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['default'] = ''
+        kwargs['editable'] = False
+        kwargs['serialize'] = False
+        super(QueryField, self).__init__(*args, **kwargs)
+
+    def deconstruct(self):
+        name, path, args, kwargs = super(QueryField, self).deconstruct()
+        del kwargs['default']
+        del kwargs['editable']
+        del kwargs['serialize']
+        return name, path, args, kwargs
+
+    def db_type(self, *args, **kwargs):
+        return 'tsquery'
+
+    def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
+        return self.get_prep_lookup(lookup_type, value)
+
+    def get_prep_value(self, value):
+        return value
+
+try:
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules(rules=[], patterns=['djorm_pgfulltext\.fields\.QueryField'])
+except ImportError:
+    pass
 
 if django.VERSION[:2] >= (1,7):
     # Create custom lookups for Django>= 1.7
